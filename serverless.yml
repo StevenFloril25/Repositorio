@@ -1,0 +1,68 @@
+org: espeserverless
+service: online-library-management
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:Scan
+      Resource: 
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/BookTable"
+
+functions:
+  createBook:
+    handler: src/createBook.createBook
+    events:
+      - httpApi:
+          path: /books
+          method: post
+
+  getBooks:
+    handler: src/getBooks.getBooks
+    events:
+      - httpApi:
+          path: /books
+          method: get
+
+  getBookById:
+    handler: src/getBook.getBookById
+    events:
+      - httpApi:
+          path: /books/{bookId}
+          method: get
+
+  updateBook:
+    handler: src/updateBook.updateBook
+    events:
+      - httpApi:
+          path: /books/{BookID}
+          method: put
+
+  deleteBook:
+    handler: src/deleteBook.deleteBook
+    events:
+      - httpApi:
+          path: /books/{BookID}
+          method: delete
+
+resources:
+  Resources:
+    BooksTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: BookTable
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: BookID
+            AttributeType: S
+        KeySchema:
+          - AttributeName: BookID
+            KeyType: HASH
